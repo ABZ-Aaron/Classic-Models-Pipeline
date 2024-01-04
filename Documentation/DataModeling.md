@@ -92,6 +92,8 @@ DELIMITER ','
 CSV HEADER;
 ```
 
+
+
 ## Notes
 
 The granularity for our table will be order item. That's to say, each row of our fact table will represent a single item on an order. 
@@ -108,5 +110,19 @@ As such, our fact table will have the following columns:
 - OrderLineNumber (DD)
 - OrderLineQuantity
 
-DD stands for derived facts
+I've created a Date Dimensional table CSV file. The date key column is just the date in format 'YYYYMMDD'. This isn't to be used by analysts (that could cause performance issues). instead, it can be useufl for partitioning the fact table
 
+We need to make sure the fact table has no null keys. We can substitue with a word like 'unkonwn'
+
+Consider degenerate dimensions (basically column in fact table that has no dimension table. This could be order number for example)
+
+Unique primary key in a dim table should be a surrogate key (rather than natural key). This is for a handful of reasons:
+
+- Natural keys can be reassigned upstream, which can cause issues to the DE team if they rely on these natural keys.
+- Surrogate keys allow DE team to integrate multiple source systems even when they lack consistent natural keys. They can use a mapping file to map multiple natural keys to one common surrogate key
+- Improve performance. Because the surrogate key will alawys just be a small integer, it reduces the size and increases the performance of the fact table. 
+- Vital for dealing with dimension changes (will cover this later)
+
+Might consider paritioning facgt table on the YYYYMMDD key dimension, and remove old data gracefully. 
+
+We don't really need surrogate key for fact table, but can be useful for immediate identifcation, among other things. 
