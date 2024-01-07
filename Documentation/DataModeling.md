@@ -124,6 +124,7 @@ As mentioned, our fact table grain will be order item (single item on an order).
 - ShippedDate (foreign key)
 - RequiredDate (foreign key)
 - ProductCode (foreign key)
+- OrderStatus (foreign key)
 - CustomerNumber (foreign key)
 - SalesRepKey (foreign key)
 - OrderNumber (degenrate dimension)
@@ -131,15 +132,15 @@ As mentioned, our fact table grain will be order item (single item on an order).
 - OrderLineQuantity (fact)
 - Price (fact)
 
-We've already covered the date dimension, which covers the first 3 columns. Lets look at the remaining dimensions `product`, `customer`, and `sales rep`. 
+We've already covered the date dimension, which covers the first 3 columns. Lets look at the remaining dimensions `product`, `customer`, `order status` and `sales rep`. 
 
-The `order number` and `order line number` are denerate dimensions and won't have an associated dimension table.
+The `order number` and `order line number` are denerate dimensions and won't have an associated dimension table. The order number in particular might be useful, as it would allow analysts to group order lines by order number.
 
 ### Product Dimension
 
 You'll notice in our database we have a `productLines` and `products` table. We could utilise a snowflake schema. Here, our dimension table would look more or less the same as the `products` table, with `productLines` being a seperate table joined on to it. 
 
-This seems like it would make sense. The alternative is to flatten de-normalise it, resulting a lot of redudant data. 
+This seems like it would make sense. The alternative is to de-normalise it, resulting a lot of redudant data. 
 
 However, there are some issues with snowflaking. A couple are:
 
@@ -152,8 +153,6 @@ The actual disk space savings of snowlflaking are usually insignificant. Taking 
 - ProductKey (PK)
 - ProductLine
 - ProductLineDescription
-- ProductLineHTMLDescription
-- ProductLineIMage
 - ProductCode
 - ProductName
 - ProductScale
@@ -163,6 +162,8 @@ The actual disk space savings of snowlflaking are usually insignificant. Taking 
 - ProductPrice
 - MSRP
 
+We've ignored the HTML description and image columns
+
 ### Customer Dimension
 
 For customer, one thing to consider is whether sales rep and customer should form the same dimension, or be seperate dimensions. In our case we'll just opt for seperate dimensions as it'll likely be more manageable, and considering that we have very few dimension tables to model anyway. 
@@ -170,6 +171,7 @@ For customer, one thing to consider is whether sales rep and customer should for
 However, we will include an attribute or two within the customers table as Type 1 SCDs so that the current sales rep assigned to a customer can be easily identified:
 
 - CustomerKey (PK)
+- CustomerNumber
 - CustomerName
 - ContactFirstName
 - ContactLastName
@@ -184,6 +186,17 @@ However, we will include an attribute or two within the customers table as Type 
 - SalesRepFullName
 - SalesRepID
 - CreditLimit
+
+### Payments Dimension
+
+One thing to note, we have a `payments` table in our schema that joins to `customers`. We could de-normalise this - like we've done previously. However, it may unlikely that payment info will be accessed much in relation to customers, and it may be best to keep these seperate - taking more of a snowflake approach:
+
+- customer_number
+- check_number
+- payment_date
+- amount
+
+So in this case, customer_number will link to customer_number in the customers dimension table. 
 
 ### Sales Rep Dimension
 
@@ -207,6 +220,13 @@ For the sales rep dimension, we'll also include details from the `office` table 
 - OfficePostalCode
 - OfficeTerritory
 
+### Order status
+
+We also want to track the order status. This will be a simple dimension:
+
+- OrderStatusKey (PK)
+- OrderStatus
+- OrderComments
 
 ## Notes
 

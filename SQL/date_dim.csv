@@ -1,4 +1,4 @@
-DateKey,FullDate,DayOfTheWeek,CalendarMonth,CalendarYear,WeekDayIndicator
+date_key,full_date,day_of_week,calendar_month,calendar_year,weekday_indicator
 20030101,01/01/2003,4,Jan,2003,Weekday
 20030102,02/01/2003,5,Jan,2003,Weekday
 20030103,03/01/2003,6,Jan,2003,Weekend
