@@ -40,8 +40,9 @@ Now that we know our grain, we can identify relevant dimensions from the data we
 - Order Date
 - Shipped Date
 - Required Date
+- Order Status
 - Product
-- Customer
+- Customer + Payments
 - Sales Rep
 
 1. Identify fact(s)
@@ -51,7 +52,7 @@ In this case:
 - Order Line Quantity 
 - Price
 
-We could also `derive` a fact by multiplying order line quantity and price, saving analysts the task of doing this (which could result in greater liklihood of error if they make the wrong calculation).
+We could also `derive` a fact by multiplying order line quantity and price, saving analysts the task of doing this (which could result in greater liklihood of error if they make the wrong calculation). Additionally, we can add `degenerate dimesnions` that have no dimension table like order number and order line item number. 
 
 ## Designing our Model - Details
 
@@ -59,7 +60,7 @@ We could also `derive` a fact by multiplying order line quantity and price, savi
 
 Notice we have 3 date dimensions (order date, shipped date, and required date). We don't have to model 3 seperate date tables, we can just use 1. 
 
-There's a number of columns we could have in our Date table, but we'll keep it simple and only include a handful. Essentially, row in our date table will represent a single day. The columns we'll include are:
+There's a number of columns we could have in our Date table, but we'll keep it simple and only include a handful. Essentially, each row in our date table will represent a single day. The columns we'll include are:
 
 - Date Key (primary key)
 - Date 
@@ -73,20 +74,20 @@ Unlike other dimension tables, we can make this ahead of time in something like 
 We can then create a Date table in our target database. Something like:
 
 ```SQL
-CREATE TABLE Date_Dim (
-    DateKey INT,
-    FullDate DATE,
-    DayOfWeek VARCHAR,
-    CalendarMonth VARCHAR,
-    CalendarYear INT,
-    WeekDayIndicator VARCHAR
+CREATE TABLE date_dim (
+    date_key INT,
+    full_date DATE,
+    day_of_week INT,
+    calendar_month VARCHAR,
+    calendar_year INT,
+    weekday_indicator VARCHAR
 );
 ```
 
 Then populate it from a CSV. Something like:
 
 ```SQL
-COPY Date_Dim(DateKey, FullDate, DayOfWeek, CalendarMonth, CalendarYear, WeekDayIndicator)
+COPY date_dim(date_key, full_date, day_of_week, calendar_month, calendar_year, weekday_indicator)
 FROM 'C:\date.csv'
 DELIMITER ','
 CSV HEADER;
@@ -114,7 +115,7 @@ For example, a source database may have an `Employee` table with column `address
 
     Note, you can also add a third `flag` boolean column which indicates which records are `active` (i.e., where current date is between effective and expiration date). This can make filtering easier for downstream users. Also note you can use a combination of Type 1 and Type 2 within the same dimension table.
 
-There are other response types (7 in total), but I won't cover them here. 
+There are other response types (7 in total), but I won't cover them here. For our project, we will not look too in depth here. However, we will implement SCD1 and SCD2 for some attributes to show how it might be done.
 
 ### Fact Table
 
@@ -132,13 +133,13 @@ As mentioned, our fact table grain will be order item (single item on an order).
 - OrderLineQuantity (fact)
 - Price (fact)
 
-We've already covered the date dimension, which covers the first 3 columns. Lets look at the remaining dimensions `product`, `customer`, `order status` and `sales rep`. 
+We've already covered the date dimension, which covers the first 3 columns. Lets look at the remaining dimensions `product`, `customer`, `order status` and `sales rep`. We did mention a `payments` dimension, however, we'll join this to the `customers` dimension.
 
 The `order number` and `order line number` are denerate dimensions and won't have an associated dimension table. The order number in particular might be useful, as it would allow analysts to group order lines by order number.
 
 ### Product Dimension
 
-You'll notice in our database we have a `productLines` and `products` table. We could utilise a snowflake schema. Here, our dimension table would look more or less the same as the `products` table, with `productLines` being a seperate table joined on to it. 
+You'll notice in our database we have a `productLines` and `products` table. We could take a snowflake approach. Here, our dimension table would look more or less the same as the `products` table, with `productLines` being a seperate table joined on to it. 
 
 This seems like it would make sense. The alternative is to de-normalise it, resulting a lot of redudant data. 
 
@@ -162,13 +163,13 @@ The actual disk space savings of snowlflaking are usually insignificant. Taking 
 - ProductPrice
 - MSRP
 
-We've ignored the HTML description and image columns
+We've ignored the HTML description and image columns from the source database.
 
 ### Customer Dimension
 
 For customer, one thing to consider is whether sales rep and customer should form the same dimension, or be seperate dimensions. In our case we'll just opt for seperate dimensions as it'll likely be more manageable, and considering that we have very few dimension tables to model anyway. 
 
-However, we will include an attribute or two within the customers table as Type 1 SCDs so that the current sales rep assigned to a customer can be easily identified:
+However, we will include a few attributes within the customers table as Type 1 SCDs so that the current sales rep assigned to a customer can be easily identified:
 
 - CustomerKey (PK)
 - CustomerNumber
@@ -189,8 +190,9 @@ However, we will include an attribute or two within the customers table as Type 
 
 ### Payments Dimension
 
-One thing to note, we have a `payments` table in our schema that joins to `customers`. We could de-normalise this - like we've done previously. However, it may unlikely that payment info will be accessed much in relation to customers, and it may be best to keep these seperate - taking more of a snowflake approach:
+One thing to note, we have a `payments` table in our schema that joins to `customers`. We could de-normalise this - like we've done previously. However, if we assume payment info will not be accessed much in relation to customers, it may be best to keep these seperate - taking more of a snowflake approach:
 
+- payment_key
 - customer_number
 - check_number
 - payment_date
@@ -228,21 +230,115 @@ We also want to track the order status. This will be a simple dimension:
 - OrderStatus
 - OrderComments
 
+## Dimensional Model Schema
+
+<img src="https://github.com/ABZ-Aaron/Classic-Models-Pipeline/blob/master/Documentation/Images/DMSchema.png" width=70% height=70%>
+
+If you'd like to create this yourself, use [dbdiagram.io](https://dbdiagram.io) and paste in the following code:
+
+```
+Table order_line_item_fct as fact {
+  order_date int
+  shipped_date int
+  required_date int
+  product_code int
+  order_status int
+  customer_number int
+  sales_rep int
+  order_number int
+  order_line_number int
+  order_line_quantity int
+  price numeric
+}
+
+Table date_dim {
+  date_key int [pk]
+  full_date date
+  day_of_week int
+  calendar_month varchar(3)
+  calendar_year int
+  weekday_indicator varchar(7)
+}
+
+Table product_dim {
+  product_key int [pk]
+  product_line varchar
+  product_line_description varchar
+  product_code varchar
+  product_name varchar
+  product_scale varchar
+  product_vendor varchar
+  product_description varchar
+  quantity_in_stock int
+  product_price numeric
+  msrp numeric
+}
+
+Table customer_dim {
+  customer_key int [pk]
+  customer_number int
+  payment_key int
+  customer_name varchar
+  contact_first_name varchar
+  contact_last_name varchar
+  phone varchar
+  address_1 varchar
+  address_2 varchar
+  city varchar
+  state varchar
+  postal_code varchar
+  country varchar
+  sales_rep_email varchar
+  sales_rep_fullname varchar
+  sales_rep_id int
+  credit_limit numeric
+}
+
+Table order_status_dim {
+  order_status_key int [pk]
+  order_status varchar
+  order_comments varchar
+}
+
+Table payment_dim {
+  payment_key int [pk]
+  customer_number int
+  check_number int
+  payment_date date
+  amount numeric
+}
+
+Table sales_rep_dim {
+  sales_rep_key int [pk]
+  sales_rep_id int
+  first_name varchar
+  last_name varchar
+  extension varchar
+  email varchar
+  reports_to int
+  job_title varchar
+  office_id int
+  office_city varchar
+  office_phone varchar
+  office_address_1 varchar
+  office_address_2 varchar
+  office_state varchar
+  office_country varchar
+  office_postal_code varchar
+  office_territory varchar
+}
+
+Ref: fact.order_date > date_dim.date_key
+Ref: fact.shipped_date > date_dim.date_key
+Ref: fact.required_date > date_dim.date_key
+Ref: fact.product_code > product_dim.product_key
+Ref: fact.order_status > order_status_dim.order_status_key
+Ref: fact.customer_number > customer_dim.customer_key
+Ref: fact.sales_rep > sales_rep_dim.sales_rep_key
+Ref: payment_dim.payment_key > customer_dim.payment_key
+```
 ## Notes
 
-The granularity for our table will be order item. That's to say, each row of our fact table will represent a single item on an order. 
-
-As such, our fact table will have the following columns:
-
-- OrderDate (FK)
-- ShippedDate (FK)
-- RequiredDate (FK)
-- ProductCode (FK)
-- CustomerNumber (FK)
-- SalesRepKey (FK)
-- OrderNumber (DD)
-- OrderLineNumber (DD)
-- OrderLineQuantity
 
 I've created a Date Dimensional table CSV file. The date key column is just the date in format 'YYYYMMDD'. This isn't to be used by analysts (that could cause performance issues). instead, it can be useufl for partitioning the fact table. For this table I've added dates from 2003 (earliest year in our dataset) up until the end of the current year (2024-2025).
 
