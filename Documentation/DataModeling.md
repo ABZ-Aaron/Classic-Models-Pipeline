@@ -356,3 +356,5 @@ Unique primary key in a dim table should be a surrogate key (rather than natural
 Might consider paritioning facgt table on the YYYYMMDD key dimension, and remove old data gracefully. 
 
 We don't really need surrogate key for fact table, but can be useful for immediate identifcation, among other things. 
+
+The excel file contains listing of tables etc.
