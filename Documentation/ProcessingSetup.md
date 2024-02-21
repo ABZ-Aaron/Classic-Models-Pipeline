@@ -16,3 +16,31 @@ Here's the transformations we'll run:
 - Rename columns
 - Remove some irrelevant columns
 
+## Databricks
+
+- Create new Databricks instance
+- Add to relevant resource group
+- For pricing teir, select Standard
+- Leave rest as default
+- Go to resource once created
+- Click Create Compute from left hand menu. Here we will create an all-purpose Databricks Cluster.
+- Click create cluster
+    - Change to single node cluster
+    - Leave performance as default
+    - Set to terminate cluster after 10 or 20 minutes. This will help save costs.
+    - For Node type, leave this as default. Make sure it's the lowest general purpose node type to save costs.
+- Leave rest as default and create cluster
+
+- Create service principlle
+    - Search Entra ID (formerly active directory)
+    - Select App Registration and click create new registration
+    - Call it classics-app and register
+    - Take a note of application ID and directory ID
+    - Finally, go to Secrets on the left and create a new Client Secret. Once created, take a note of the Value.
+    - Go to our data lake stroage account, click IAM, and click Add new role assignment.
+    - Select storage blob contributer role
+    - Under members, search and add classics app
+    - Review and assign. 
+    - What we've done here is allowed our service principle contribuer access to our storage account
+     - In Databricks, under workspace, create a folder `Classics`, and in there create another folder `Setup`
+    - 
