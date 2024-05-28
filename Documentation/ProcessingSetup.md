@@ -42,5 +42,4 @@ Here's the transformations we'll run:
     - Under members, search and add classics app
     - Review and assign. 
     - What we've done here is allowed our service principle contribuer access to our storage account
-     - In Databricks, under workspace, create a folder `Classics`, and in there create another folder `Setup`
-    - 
+    s- In Databricks, under workspace, create a folder `Classics`, and in there create another folder `Setup`

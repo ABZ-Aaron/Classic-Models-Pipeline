@@ -63,3 +63,15 @@ We then create databricks secret scope
  - We can then access mount points without using credentials. 
 
  - Add indexes to Data Warehouse once complete. 
+
+ # Databases
+
+ In order for Spark to treat our data as tables and columns, we need to register this data 
+ in a metastore. Spark uses Hive Meta Store to store this metadata. 
+
+ - Managed Tables (spark manages the metadata and data files)
+ - External Tables (spark manages the metadata and we manage the data files)
+
+
+Cluser in databricks should be created as No Isolation Shared, which will allow ADF managed identity to access the cluster.
+

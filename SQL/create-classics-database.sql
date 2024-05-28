@@ -1,18 +1,21 @@
-/* Create the database */
---CREATE DATABASE classicmodels;
-
-/* Switch to the classicmodels database */
---USE classicmodels;
+/*
+- creates the database mentioned here: https://www.mysqltutorial.org/getting-started-with-mysql/mysql-sample-database/ with some slight modifications to allow it to work with Postgres and to give each table a `last_updated` column.
+- creates function which updates the `last_updated` column for each table with current timestamp when called.
+- creates triggers on each table, so that when a change is made to a record on a table, the function to update the `last_updated` column with current timestamp will be called. This is important, as for each pipeline run, it allows us to determine which records in the database were last updated since the last pipeline run - allowing us to incrementally extract data.
+- creates configurations `control` table and populates it. This table contains metadata regarding our database tabes, such as table names, schema name, column used to determine last update of table records, etc. Importantly, it contains a `FromDate` column. Using this column, we take a `WaterMark` approach to incremental extraction. Essentially, after each pipeline run, we will set this value to the maximum `last update` timestamp. Then on the next run, our process knows to only extract records greater than this timestamp. You can read more about this [here](https://datakuity.com/2022/12/14/incrementally-load-with-synapse/). We follow a very similar approach.
+- Creates procedure which will update watermark value in control table with passed timestamp.
+*/
 
 /* Drop existing tables  */
-DROP TABLE IF EXISTS productlines;
-DROP TABLE IF EXISTS products;
-DROP TABLE IF EXISTS offices;
-DROP TABLE IF EXISTS employees;
-DROP TABLE IF EXISTS customers; 
-DROP TABLE IF EXISTS payments;
-DROP TABLE IF EXISTS orders;
-DROP TABLE IF EXISTS orderdetails;
+DROP TABLE IF EXISTS productlines CASCADE;
+DROP TABLE IF EXISTS products CASCADE;
+DROP TABLE IF EXISTS offices CASCADE;
+DROP TABLE IF EXISTS employees CASCADE;
+DROP TABLE IF EXISTS customers CASCADE; 
+DROP TABLE IF EXISTS payments CASCADE;
+DROP TABLE IF EXISTS orders CASCADE;
+DROP TABLE IF EXISTS orderdetails CASCADE;
+DROP FUNCTION IF EXISTS last_update_fc;
 
 /* Create the tables */
 CREATE TABLE productlines (
