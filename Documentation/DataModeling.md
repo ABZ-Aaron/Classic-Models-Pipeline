@@ -1,17 +1,15 @@
 # Data Modeling
 
-For this project I've designed a dimensional model.
+For this project, the source database in postgres is an operational database. It's fully normalised and thus optimised for single `transactions`. Ideally the target Data Warehouse should to be optimised for `analytics`. 
 
-The source database in postgres is an operational database. It's fully normalised and thus optimised for `transactions`. However, the target Data Warehouse should to be optimised for `analytics`. This is where `Dimensional Modeling` comes in. This technique helps to present data that is `simple to understand for users` and delivers `fast query performance`.
-
-In particular, I've modelled the data as a `star` schema, as opposed to the 3rd Normal Form source database. Star schemas include two main components:
+This is where `Dimensional Modeling` comes in. This technique helps to present data that is `simple to understand for end users` and delivers `fast query performance`. One particular design option here is the `star schema`, which includes two main components:
 
 1. Fact Tables - this stores performance measurements. For example, a single row in a fact table may represent a single item of an online shopping order, with `facts` or measurements like order line quantity. Other columns in the fact table would likely be foreign keys to lookup or `dimension` tables.
 1. Dimension Tables - these tables store context associated with the fact table. For example, you could have a `Date` dimension table, along with a `Product` dimension table.
 
 The star schema is so named because a fact table, surrounded by dimension tables (with lines joining them) resembles a star. A snowflake schema is much the same as a star schema, except that the dimension tables as further normalised. 
 
-When designing a dimensional model, you'll want to layout the design somewhere, map source columns to target columns, etc. In our case, a basic excel file has been put together with details on each table [here](Documentation/TableDesign.xlsx).
+When designing a dimensional model, you'll want to describe the design, map source columns to target columns, and so on. For this project, some of these details were included within a simple excel file, which can be found [here](Documentation/TableDesign.xlsx).
 
 ## Dimenisional Modeling Steps
 
@@ -25,17 +23,19 @@ The general steps one could follow when creating a dimensional model are:
 
 ## Designing the Model - Overview
 
-1. Gathering Business Requirements and choosing the Business Process
+Lets try follow the above steps when designing a star schema for this project:
+
+#### Gathering Business Requirements and choosing the Business Process
 
 Because this is a sample project involving the ordering of classical (scale) car models, we can assume we've had various meetings and determined the business process already.
 
-1. Declare the Grain
+#### Declare the Grain
 
 In our case, a natural grain would be line items on an order, similar to each line on a reciept. Here we are selecting data at its lowest atomic grain. We could summarise this data by aggregating the line items for a single order - however, we would lose some of the detail here, and users would be unable to drill down if required. That's not to say there aren't case where you would want to create a fact table with summarised data.
 
 As our sample database also has customer payment information, we can further track this within another fact table, with grain being payments made by each customer.
 
-1. Identify Dimensions
+#### Identify Dimensions
 
 Now that we know the grain for both of our fact tables, we can identify relevant dimensions from the data we have available to use that give context to these. 
 
@@ -53,7 +53,7 @@ For our Payments table:
 - Customer
 - Payment Date
 
-1. Identify fact(s)
+#### Identify fact(s)
 
 For our Order Line Items table:
 

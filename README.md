@@ -24,19 +24,10 @@ STILL IN PROGRESS
 1. Visualising data with [Power BI](https://www.microsoft.com/en-us/power-platform/products/power-bi)
 1. Develop and deploy [Machine Learning Model](https://www.ibm.com/topics/machine-learning) with [Flask](https://flask.palletsprojects.com/en/3.0.x/).
 
-## Output
+## Overview
 
-```
-STILL IN PROGRESS
-```
+For details on this project, refer to:
 
-## Setup
-
-```
-STILL IN PROGRESS
-```
-
-Follow the below steps to setup pipeline. 
-
-1. Overview
-1. Setup Azure Services
+- [Designing the Dimensional Data Model](Documentation/DataModeling.md)
+- [Overview of Tools & Services chosen](Documentation/Tools.md)
+- [Building the Pipeline with Azure Data Factory & Databricks](Documentation/Pipeline.md)
